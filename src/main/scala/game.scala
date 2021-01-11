@@ -4,6 +4,7 @@ import board._
 import player._
 
 import cats.effect._
+import cats.implicits._
 
 object game {
   sealed trait Outcome
@@ -17,9 +18,9 @@ object game {
 
   object Game {
     def start[F[_]: Sync](board: Board[F]): Game[F] = new Game[F] {
-      override def next(mark: Mark): F[Unit] = ???
+      override def next(mark: Mark): F[Unit] = board.add(mark)
 
-      override def solve: F[Option[Outcome]] = ???
+      override def solve: F[Option[Outcome]] = Sync[F].pure(none[Outcome])
     }
   }
 }

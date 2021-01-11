@@ -2,6 +2,9 @@ package es.eriktorr
 
 import player._
 
+import cats._
+import cats.derived._
+
 object board {
   sealed trait Position extends Product with Serializable
 
@@ -29,5 +32,11 @@ object board {
 
   final case class Mark(player: Player, position: Position)
 
-  trait Board[F[_]] {}
+  object Mark {
+    implicit val showMark: Show[Mark] = semiauto.show
+  }
+
+  trait Board[F[_]] {
+    def add(mark: Mark): F[Unit]
+  }
 }

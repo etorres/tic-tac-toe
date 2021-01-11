@@ -2,7 +2,7 @@ package es.eriktorr
 
 import board._
 import game._
-import infrastructure.{BoardState, FakeBoard}
+import infrastructure.FakeInMemoryBoard
 import player._
 
 import cats._
@@ -31,14 +31,22 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
     forall(gen) {
       case TestCase(player, position) =>
         for {
-          boardState <- Ref.of(BoardState(List.empty))
-          board = FakeBoard(boardState)
+          marksRef <- Ref.of[IO, List[Mark]](List.empty)
+          board = FakeInMemoryBoard(marksRef)
           game = Game.start[IO](board)
           mark = Mark(player, position)
           _ <- game.next(mark)
           outcome <- game.solve
-          finalBoardState <- boardState.get
-        } yield expect(outcome.isEmpty) && expect(finalBoardState.marks == List(mark))
+          finalMarks <- marksRef.get
+        } yield expect(outcome.isEmpty) && expect(finalMarks == List(mark))
     }
+  }
+
+  simpleTest("players alternate to play") {
+    expect(false)
+  }
+
+  simpleTest("there can only be one mark for each position on the board") {
+    expect(false)
   }
 }
