@@ -18,7 +18,7 @@ val catsScalacheckVersion = "0.3.0"
 val kittensVersion = "2.2.1"
 val newtypeVersion = "0.4.4"
 val refinedVersion = "0.9.19"
-val weaverVersion = "0.5.0"
+val weaverVersion = "0.5.1"
 
 libraryDependencies ++= Seq(
   compilerPlugin("org.typelevel" %% "kind-projector" % "0.11.2" cross CrossVersion.full),
