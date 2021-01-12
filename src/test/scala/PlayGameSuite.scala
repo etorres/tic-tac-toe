@@ -3,22 +3,21 @@ package es.eriktorr
 import board._
 import effect._
 import error._
-import game._
-import infrastructure.FakeInMemoryBoard
+import infrastructure.GameContext.GameState.newGame
+import infrastructure.GameContext.withGameContext
+import infrastructure.Generators.nDistinct
 import player._
 
 import cats._
 import cats.data._
 import cats.derived._
-import cats.effect._
-import cats.effect.concurrent.Ref
 import cats.implicits._
 import org.scalacheck._
 import weaver._
 import weaver.scalacheck._
 
 object PlayGameSuite extends SimpleIOSuite with IOCheckers {
-  def positionGen: Gen[Position] = Gen.oneOf(allPositions)
+  def positionGen: Gen[Position] = Gen.oneOf(allPositions.toList)
 
   final case class TestCase(marks: NonEmptyList[Mark])
 
@@ -34,21 +33,34 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
 
     forall(gen) {
       case TestCase(marks) =>
-        for {
-          marksRef <- Ref.of[IO, List[Mark]](List.empty)
-          board = FakeInMemoryBoard(marksRef)
-          game = Game.start[IO](board)
-          mark = marks.head
-          _ <- game.next(mark)
-          outcome <- game.solve
-          finalMarks <- marksRef.get
-        } yield expect.all(outcome.isEmpty, finalMarks == List(mark))
+        withGameContext(newGame) { game =>
+          game.next(marks.head) *> game.solve
+        } map {
+          case (finalState, outcome) =>
+            expect.all(outcome.isEmpty, finalState.marks == marks.toList)
+        }
     }
   }
 
-//  simpleTest("players alternate to play") {
-//    failure("feature under development")
-//  }
+  simpleTest("players alternate to play") {
+    implicit val playerOrder: Order[Player] = Order.fromLessThan((a, _) => a.eq(Crosses))
+
+    val gen = for {
+      players <- nDistinct(2, Gen.oneOf(allPlayers.toList))
+      positions <- nDistinct(2, positionGen)
+      marks = (players zip positions).map { case (player, position) => Mark(player, position) }
+    } yield TestCase(NonEmptyList.fromListUnsafe(marks).sortBy(_.player))
+
+    forall(gen) {
+      case TestCase(marks) =>
+        withGameContext(newGame) { game =>
+          marks.foldMap(game.next)
+        } map {
+          case (finalState, outcome) =>
+            expect.all(outcome.isEmpty, finalState.marks == marks.toList.reverse)
+        }
+    }
+  }
 
   simpleTest("there can only be one mark for each position on the board") {
     val gen = for {
@@ -61,12 +73,12 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
 
     forall(gen) {
       case TestCase(marks) =>
-        for {
-          marksRef <- Ref.of[IO, List[Mark]](List.empty)
-          board = FakeInMemoryBoard(marksRef)
-          game = Game.start[IO](board)
-          error <- marks.foldMap(game.next).extractError[InvalidMove]
-        } yield expect(error == s"A mark already exist in the board: ${marks.head.show}".some)
+        withGameContext(newGame) { game =>
+          marks.foldMap(game.next).extractError[InvalidMove]
+        } map {
+          case (_, error) =>
+            expect(error == s"A mark already exist in the board: ${marks.head.show}".some)
+        }
     }
   }
 }

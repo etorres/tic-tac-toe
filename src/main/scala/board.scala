@@ -3,6 +3,7 @@ package es.eriktorr
 import player._
 
 import cats._
+import cats.data._
 import cats.derived._
 
 object board {
@@ -18,7 +19,7 @@ object board {
   case object BottomCenter extends Position
   case object BottomRightCorner extends Position
 
-  val allPositions: List[Position] = List(
+  val allPositions: NonEmptyList[Position] = NonEmptyList.of(
     TopLeftCorner,
     TopCenter,
     TopRightCorner,
