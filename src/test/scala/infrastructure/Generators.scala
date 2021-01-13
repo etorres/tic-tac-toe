@@ -24,6 +24,8 @@ object Generators {
 
   def crossesGen: Gen[Player] = Gen.const(Crosses)
 
+  def noughtsGen: Gen[Player] = Gen.const(Noughts)
+
   def playerGen: Gen[Player] = Gen.oneOf(allPlayers.toList)
 
   def positionGen: Gen[Position] = Gen.oneOf(allPositions.toList)

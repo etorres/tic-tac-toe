@@ -39,13 +39,24 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
     }
   }
 
-  simpleTest("starting with a 0 is not possible") {
-    failure("feature under development")
+  simpleTest("starting with 0 is not possible") {
+    val gen = for {
+      player <- noughtsGen
+      position <- positionGen
+    } yield TestCase(NonEmptyList.one(Mark(player, position)))
+
+    forall(gen) {
+      case TestCase(marks) =>
+        withGameContext(newGame) { game =>
+          game.next(marks.head).extractError[InvalidMove]
+        } map {
+          case (_, error) =>
+            expect(error == s"Players must wait their turn to play".some)
+        }
+    }
   }
 
-  simpleTest("players alternate to play") {
-    implicit val playerOrder: Order[Player] = Order.fromLessThan((a, _) => a.eq(Crosses))
-
+  simpleTest("players alternate taking turns to play") {
     val gen = for {
       players <- nDistinct(2, playerGen)
       positions <- nDistinct(2, positionGen)
@@ -69,12 +80,11 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
 
   simpleTest("there can only be one mark for each position on the board") {
     val gen = for {
-      player <- crossesGen
+      players <- nDistinct(2, playerGen)
       position <- positionGen
-    } yield {
-      val mark = Mark(player, position)
-      TestCase(NonEmptyList.of(mark, mark))
-    }
+      positions = List.fill(2)(position)
+      marks = (players zip positions).map { case (player, position) => Mark(player, position) }
+    } yield TestCase(NonEmptyList.fromListUnsafe(marks).sortBy(_.player))
 
     forall(gen) {
       case TestCase(marks) =>
@@ -82,7 +92,7 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
           marks.foldMap(game.next).extractError[InvalidMove]
         } map {
           case (_, error) =>
-            expect(error == s"A mark already exist in the board: ${marks.head.show}".some)
+            expect(error == s"A mark already exist in the board: ${marks.reverse.head.show}".some)
         }
     }
   }

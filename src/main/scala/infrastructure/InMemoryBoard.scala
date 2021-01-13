@@ -23,7 +23,7 @@ trait InMemoryBoard extends Board[IO] {
     (mark: Mark, ref: Ref[IO, List[Mark]]) =>
       for {
         maybeModified <- ref.modify { currentMarks =>
-          currentMarks.find(_.eq(mark)) match {
+          currentMarks.find(_.position.equals(mark.position)) match {
             case Some(_) =>
               currentMarks -> InvalidMove(
                 s"A mark already exist in the board: ${mark.show}"
