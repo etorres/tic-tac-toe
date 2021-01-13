@@ -12,6 +12,7 @@ import cats._
 import cats.data._
 import cats.derived._
 import cats.implicits._
+import org.scalacheck._
 import weaver._
 import weaver.scalacheck._
 
@@ -39,6 +40,23 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
     }
   }
 
+  simpleTest("the game cannot start with a 0") {
+    val gen = for {
+      player <- noughtsGen
+      position <- positionGen
+    } yield TestCase(NonEmptyList.one(Mark(player, position)))
+
+    forall(gen) {
+      case TestCase(marks) =>
+        withGameContext(newGame) { game =>
+          game.next(marks.head).extractError[InvalidMove]
+        } map {
+          case (_, errors) =>
+            expect(errors == List(s"The game cannot start with a ${Noughts.toString}"))
+        }
+    }
+  }
+
   simpleTest("players alternate taking turns to play") {
     val gen = for {
       players <- nDistinct(2, playerGen)
@@ -59,17 +77,22 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
 
   simpleTest("players must wait their turn to play") {
     val gen = for {
-      player <- noughtsGen
-      position <- positionGen
-    } yield TestCase(NonEmptyList.one(Mark(player, position)))
+      players <- Gen.const(List(Crosses, Noughts, Noughts))
+      positions <- nDistinct(3, positionGen)
+      marks = (players zip positions).map { case (player, position) => Mark(player, position) }
+    } yield TestCase(NonEmptyList.fromListUnsafe(marks).sortBy(_.player))
 
     forall(gen) {
       case TestCase(marks) =>
         withGameContext(newGame) { game =>
-          game.next(marks.head).extractError[InvalidMove]
+          marks.foldMap(game.next).extractError[InvalidMove]
         } map {
           case (_, errors) =>
-            expect(errors == List(s"The game cannot start with a ${Noughts.toString}"))
+            expect(
+              errors == List(
+                s"Player ${Noughts.toString} plays twice in a row"
+              )
+            )
         }
     }
   }
