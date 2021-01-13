@@ -39,23 +39,6 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
     }
   }
 
-  simpleTest("starting with 0 is not possible") {
-    val gen = for {
-      player <- noughtsGen
-      position <- positionGen
-    } yield TestCase(NonEmptyList.one(Mark(player, position)))
-
-    forall(gen) {
-      case TestCase(marks) =>
-        withGameContext(newGame) { game =>
-          game.next(marks.head).extractError[InvalidMove]
-        } map {
-          case (_, error) =>
-            expect(error == s"Players must wait their turn to play".some)
-        }
-    }
-  }
-
   simpleTest("players alternate taking turns to play") {
     val gen = for {
       players <- nDistinct(2, playerGen)
@@ -75,7 +58,20 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
   }
 
   simpleTest("players must wait their turn to play") {
-    failure("feature under development")
+    val gen = for {
+      player <- noughtsGen
+      position <- positionGen
+    } yield TestCase(NonEmptyList.one(Mark(player, position)))
+
+    forall(gen) {
+      case TestCase(marks) =>
+        withGameContext(newGame) { game =>
+          game.next(marks.head).extractError[InvalidMove]
+        } map {
+          case (_, errors) =>
+            expect(errors == List(s"The game cannot start with a ${Noughts.toString}"))
+        }
+    }
   }
 
   simpleTest("there can only be one mark for each position on the board") {
@@ -91,8 +87,12 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
         withGameContext(newGame) { game =>
           marks.foldMap(game.next).extractError[InvalidMove]
         } map {
-          case (_, error) =>
-            expect(error == s"A mark already exist in the board: ${marks.reverse.head.show}".some)
+          case (_, errors) =>
+            expect(
+              errors == List(
+                s"A mark already exist in the position: ${marks.reverse.head.position.toString}"
+              )
+            )
         }
     }
   }

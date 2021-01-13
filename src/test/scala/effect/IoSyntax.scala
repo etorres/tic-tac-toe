@@ -10,10 +10,10 @@ import scala.reflect.ClassTag
 
 trait IoSyntax {
   implicit class IoOps[A](self: IO[A]) {
-    def extractError[E <: Throwable](implicit tag: ClassTag[E]): IO[Option[String]] =
-      self.map(_ => none[String]).recoverWith {
-        case e: InvalidMove => IO(e.error.some)
-        case e: E => IO(e.getMessage.some)
+    def extractError[E <: Throwable](implicit tag: ClassTag[E]): IO[List[String]] =
+      self.map(_ => List.empty[String]).recoverWith {
+        case e: InvalidMove => IO(e.errors.toList)
+        case e: E => IO(List(e.getMessage))
       }
   }
 }

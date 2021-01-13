@@ -2,7 +2,6 @@ package es.eriktorr
 
 import board._
 import player._
-import turns._
 
 import cats.effect._
 import cats.implicits._
@@ -18,8 +17,8 @@ object game {
   }
 
   object Game {
-    def start[F[_]: Sync](turns: Turns[F], board: Board[F]): Game[F] = new Game[F] {
-      override def next(mark: Mark): F[Unit] = turns.advance(mark.player) *> board.add(mark)
+    def start[F[_]: Sync](board: Board[F]): Game[F] = new Game[F] {
+      override def next(mark: Mark): F[Unit] = board.add(mark)
 
       override def solve: F[Option[Outcome]] = Sync[F].pure(none[Outcome])
     }
