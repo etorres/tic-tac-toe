@@ -1,6 +1,9 @@
 package es.eriktorr
 package infrastructure
 
+import board._
+import player._
+
 import org.scalacheck._
 
 object Generators {
@@ -18,4 +21,10 @@ object Generators {
 
     generate(List.empty)
   }
+
+  def crossesGen: Gen[Player] = Gen.const(Crosses)
+
+  def playerGen: Gen[Player] = Gen.oneOf(allPlayers.toList)
+
+  def positionGen: Gen[Position] = Gen.oneOf(allPositions.toList)
 }
