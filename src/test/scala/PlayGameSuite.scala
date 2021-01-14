@@ -142,10 +142,7 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
           case (player, position) => Mark(player, position)
         }
       )
-      allMarks = loserMarks
-        .map(List(_))
-        .zipAll(winnerMarks.map(List(_)), Nil, Nil)
-        .flatMap(Function.tupled(_ ::: _))
+      allMarks = loserMarks.intersperse(winnerMarks)
     } yield TestCase(
       NonEmptyList
         .fromListUnsafe(if (allMarks.head.player.eq(Crosses)) allMarks else allMarks.tail),

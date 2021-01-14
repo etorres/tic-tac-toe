@@ -1,3 +1,3 @@
 package es.eriktorr
 
-package object effect extends IoSyntax {}
+package object effect extends ListSyntax with IoSyntax {}
