@@ -19,6 +19,8 @@ object board {
   case object BottomCenter extends Position
   case object BottomRightCorner extends Position
 
+  implicit val eqPosition: Eq[Position] = semiauto.eq
+
   val allPositions: NonEmptyList[Position] = NonEmptyList.of(
     TopLeftCorner,
     TopCenter,
@@ -31,11 +33,29 @@ object board {
     BottomRightCorner
   )
 
+  val diagonals: NonEmptyList[NonEmptyList[Position]] =
+    NonEmptyList.of(
+      NonEmptyList.of(TopLeftCorner, Center, BottomRightCorner),
+      NonEmptyList.of(TopRightCorner, Center, BottomLeftCorner)
+    )
+
+  val horizontalRows: NonEmptyList[NonEmptyList[Position]] =
+    NonEmptyList.of(
+      NonEmptyList.of(TopLeftCorner, TopCenter, TopRightCorner),
+      NonEmptyList.of(CenterLeft, Center, CenterRight),
+      NonEmptyList.of(BottomLeftCorner, BottomCenter, BottomRightCorner)
+    )
+
+  val verticalRows: NonEmptyList[NonEmptyList[Position]] =
+    NonEmptyList.of(
+      NonEmptyList.of(TopLeftCorner, CenterLeft, BottomLeftCorner),
+      NonEmptyList.of(TopCenter, Center, BottomCenter),
+      NonEmptyList.of(TopRightCorner, CenterRight, BottomRightCorner)
+    )
+
   final case class Mark(player: Player, position: Position)
 
-  object Mark {
-    implicit val showMark: Show[Mark] = semiauto.show
-  }
+  implicit val showMark: Show[Mark] = semiauto.show
 
   trait Board[F[_]] {
     def add(mark: Mark): F[Unit]

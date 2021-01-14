@@ -8,6 +8,7 @@ import cats.implicits._
 
 object game {
   sealed trait Outcome
+
   final case class Winner(player: Player) extends Outcome
   case object Draw extends Outcome
 

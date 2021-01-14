@@ -34,7 +34,7 @@ trait InMemoryBoard extends Board[IO] {
         else s"Player ${player.toString} plays twice in a row".invalidNec
       case None =>
         if (player.eq(Crosses)) player.validNec
-        else s"The game cannot start with a ${player.toString}".invalidNec
+        else s"The game cannot start with ${player.toString}".invalidNec
     }
   }
 
@@ -50,9 +50,7 @@ trait InMemoryBoard extends Board[IO] {
   }
 
   private[this] def validateMove(mark: Mark, currentMarks: List[Mark]): ValidationResult[Mark] =
-    (validatePlayer(mark, currentMarks), validatePosition(mark, currentMarks)).mapN(
-      (player, position) => Mark(player, position)
-    )
+    (validatePlayer(mark, currentMarks), validatePosition(mark, currentMarks)).mapN(Mark)
 
   val addOrFail: (Mark, Ref[IO, List[Mark]]) => IO[Unit] =
     (mark: Mark, ref: Ref[IO, List[Mark]]) =>
