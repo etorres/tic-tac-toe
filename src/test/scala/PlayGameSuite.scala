@@ -18,10 +18,6 @@ import weaver._
 import weaver.scalacheck._
 
 object PlayGameSuite extends SimpleIOSuite with IOCheckers {
-  final case class TestCase(marks: NonEmptyList[Mark], expectedOutcome: Option[GameOutcome])
-
-  implicit val showTestCase: Show[TestCase] = semiauto.show
-
   simpleTest("the game starts with the first player making an X mark in the board") {
     val gen = for {
       player <- crossesGen
@@ -60,7 +56,7 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
     val gen = for {
       players <- nDistinct(2, playerGen)
       positions <- nDistinct(2, positionGen)
-      marks = (players zip positions).map { case (player, position) => Mark(player, position) }
+      marks = asMarks(players, positions)
     } yield TestCase(NonEmptyList.fromListUnsafe(marks).sortBy(_.player), none[GameOutcome])
 
     forall(gen) {
@@ -78,7 +74,7 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
     val gen = for {
       players <- Gen.const(List(Crosses, Noughts, Noughts))
       positions <- nDistinct(3, positionGen)
-      marks = (players zip positions).map { case (player, position) => Mark(player, position) }
+      marks = asMarks(players, positions)
     } yield TestCase(NonEmptyList.fromListUnsafe(marks).sortBy(_.player), none[GameOutcome])
 
     forall(gen) {
@@ -101,7 +97,7 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
       players <- nDistinct(2, playerGen)
       position <- positionGen
       positions = List.fill(2)(position)
-      marks = (players zip positions).map { case (player, position) => Mark(player, position) }
+      marks = asMarks(players, positions)
     } yield TestCase(NonEmptyList.fromListUnsafe(marks).sortBy(_.player), none[GameOutcome])
 
     forall(gen) {
@@ -135,12 +131,8 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
         Gen.oneOf(allPositions.filterNot(winnerPositions.contains_(_)))
       )
       (winnerMarks, loserMarks) = (
-        (List.fill(3)(winner) zip winnerPositions).map {
-          case (player, position) => Mark(player, position)
-        },
-        (List.fill(3)(loser) zip loserPositions).map {
-          case (player, position) => Mark(player, position)
-        }
+        asMarks(List.fill(3)(winner), winnerPositions),
+        asMarks(List.fill(3)(loser), loserPositions)
       )
       allMarks = loserMarks.intersperse(winnerMarks)
     } yield TestCase(
@@ -159,4 +151,13 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
         }
     }
   }
+
+  final case class TestCase(marks: NonEmptyList[Mark], expectedOutcome: Option[GameOutcome])
+
+  implicit val showTestCase: Show[TestCase] = semiauto.show
+
+  private[this] def asMarks(players: List[Player], positions: List[Position]): List[Mark] =
+    (players zip positions).map {
+      case (player, position) => Mark(player, position)
+    }
 }
