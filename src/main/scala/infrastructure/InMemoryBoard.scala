@@ -64,4 +64,28 @@ trait InMemoryBoard extends Board[IO] {
         }
         result <- IO.fromEither(maybeModified)
       } yield result
+
+  val findThreeInARow: Ref[IO, List[Mark]] => IO[Option[Player]] = (ref: Ref[IO, List[Mark]]) =>
+    for {
+      currentMarks <- ref.get
+      positionsGroupedByPlayer = currentMarks.groupBy(_.player).map {
+        case (player, marks) => player -> marks.map(_.position).toSet
+      }
+      winner = positionsGroupedByPlayer
+        .find {
+          case (_, positions) =>
+            diagonals
+              .find(_.subsetOf(positions))
+              .orElse {
+                horizontalRows.find(_.subsetOf(positions))
+              }
+              .orElse {
+                verticalRows.find(_.subsetOf(positions))
+              } match {
+              case Some(_) => true
+              case None => false
+            }
+        }
+        .map { case (player, _) => player }
+    } yield winner
 }

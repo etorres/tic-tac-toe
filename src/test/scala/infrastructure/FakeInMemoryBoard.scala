@@ -9,6 +9,8 @@ import cats.effect.concurrent.Ref
 final class FakeInMemoryBoard private[infrastructure] (val ref: Ref[IO, List[Mark]])
     extends InMemoryBoard {
   override def add(mark: Mark): IO[Unit] = maybeAdd(mark, x => addOrFail(x, ref))
+
+  override def threeInARow: IO[Option[player.Player]] = findThreeInARow(ref)
 }
 
 object FakeInMemoryBoard {

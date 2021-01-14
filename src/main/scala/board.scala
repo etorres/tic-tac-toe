@@ -33,24 +33,24 @@ object board {
     BottomRightCorner
   )
 
-  val diagonals: NonEmptyList[NonEmptyList[Position]] =
+  val diagonals: NonEmptyList[Set[Position]] =
     NonEmptyList.of(
-      NonEmptyList.of(TopLeftCorner, Center, BottomRightCorner),
-      NonEmptyList.of(TopRightCorner, Center, BottomLeftCorner)
+      Set(TopLeftCorner, Center, BottomRightCorner),
+      Set(TopRightCorner, Center, BottomLeftCorner)
     )
 
-  val horizontalRows: NonEmptyList[NonEmptyList[Position]] =
+  val horizontalRows: NonEmptyList[Set[Position]] =
     NonEmptyList.of(
-      NonEmptyList.of(TopLeftCorner, TopCenter, TopRightCorner),
-      NonEmptyList.of(CenterLeft, Center, CenterRight),
-      NonEmptyList.of(BottomLeftCorner, BottomCenter, BottomRightCorner)
+      Set(TopLeftCorner, TopCenter, TopRightCorner),
+      Set(CenterLeft, Center, CenterRight),
+      Set(BottomLeftCorner, BottomCenter, BottomRightCorner)
     )
 
-  val verticalRows: NonEmptyList[NonEmptyList[Position]] =
+  val verticalRows: NonEmptyList[Set[Position]] =
     NonEmptyList.of(
-      NonEmptyList.of(TopLeftCorner, CenterLeft, BottomLeftCorner),
-      NonEmptyList.of(TopCenter, Center, BottomCenter),
-      NonEmptyList.of(TopRightCorner, CenterRight, BottomRightCorner)
+      Set(TopLeftCorner, CenterLeft, BottomLeftCorner),
+      Set(TopCenter, Center, BottomCenter),
+      Set(TopRightCorner, CenterRight, BottomRightCorner)
     )
 
   final case class Mark(player: Player, position: Position)
@@ -59,5 +59,7 @@ object board {
 
   trait Board[F[_]] {
     def add(mark: Mark): F[Unit]
+
+    def threeInARow: F[Option[Player]]
   }
 }

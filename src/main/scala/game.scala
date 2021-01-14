@@ -21,7 +21,12 @@ object game {
     def start[F[_]: Sync](board: Board[F]): Game[F] = new Game[F] {
       override def next(mark: Mark): F[Unit] = board.add(mark)
 
-      override def solve: F[Option[Outcome]] = Sync[F].pure(none[Outcome])
+      override def solve: F[Option[Outcome]] =
+        board.threeInARow
+          .map {
+            case Some(player) => Winner(player).some
+            case None => none[Outcome]
+          }
     }
   }
 }
