@@ -22,10 +22,10 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
     val gen = for {
       player <- crossesGen
       position <- positionGen
-    } yield TestCase(NonEmptyList.one(Mark(player, position)), none[GameOutcome])
+    } yield TestCase(NonEmptyList.one(Mark(player, position)), none[GameOutcome], none[Player])
 
     forall(gen) {
-      case TestCase(marks, expectedOutcome) =>
+      case TestCase(marks, expectedOutcome, _) =>
         withGameContext(newGame) { game =>
           game.next(marks.head) *> game.solve
         } map {
@@ -39,15 +39,17 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
     val gen = for {
       player <- noughtsGen
       position <- positionGen
-    } yield TestCase(NonEmptyList.one(Mark(player, position)), none[GameOutcome])
+    } yield TestCase(NonEmptyList.one(Mark(player, position)), none[GameOutcome], player.some)
 
     forall(gen) {
-      case TestCase(marks, _) =>
+      case TestCase(marks, _, player) =>
         withGameContext(newGame) { game =>
-          game.next(marks.head).extractError[InvalidMove]
+          game.next(marks.head).extractErrors[InvalidMove]
         } map {
           case (_, errors) =>
-            expect(errors == List(s"The game cannot start with ${Noughts.toString}"))
+            expect(
+              errors == List(s"The game cannot start with ${player.stringOrEmpty}")
+            )
         }
     }
   }
@@ -57,10 +59,14 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
       players <- nDistinct(2, playerGen)
       positions <- nDistinct(2, positionGen)
       marks = asMarks(players, positions)
-    } yield TestCase(NonEmptyList.fromListUnsafe(marks).sortBy(_.player), none[GameOutcome])
+    } yield TestCase(
+      NonEmptyList.fromListUnsafe(marks).sortBy(_.player),
+      none[GameOutcome],
+      none[Player]
+    )
 
     forall(gen) {
-      case TestCase(marks, _) =>
+      case TestCase(marks, _, _) =>
         withGameContext(newGame) { game =>
           marks.foldMap(game.next)
         } map {
@@ -72,20 +78,26 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
 
   simpleTest("players must wait their turn to play") {
     val gen = for {
-      players <- Gen.const(List(Crosses, Noughts, Noughts))
+      distinctPlayers <- nDistinct(2, playerGen)
+      duplicatePlayer <- playerGen
+      players = (duplicatePlayer :: distinctPlayers).sorted
       positions <- nDistinct(3, positionGen)
       marks = asMarks(players, positions)
-    } yield TestCase(NonEmptyList.fromListUnsafe(marks).sortBy(_.player), none[GameOutcome])
+    } yield TestCase(
+      NonEmptyList.fromListUnsafe(marks).sortBy(_.player),
+      none[GameOutcome],
+      duplicatePlayer.some
+    )
 
     forall(gen) {
-      case TestCase(marks, _) =>
+      case TestCase(marks, _, duplicatePlayer) =>
         withGameContext(newGame) { game =>
-          marks.foldMap(game.next).extractError[InvalidMove]
+          marks.foldMap(game.next).extractErrors[InvalidMove]
         } map {
           case (_, errors) =>
             expect(
               errors == List(
-                s"Player ${Noughts.toString} plays twice in a row"
+                s"Player ${duplicatePlayer.stringOrEmpty} plays twice in a row"
               )
             )
         }
@@ -98,12 +110,16 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
       position <- positionGen
       positions = List.fill(2)(position)
       marks = asMarks(players, positions)
-    } yield TestCase(NonEmptyList.fromListUnsafe(marks).sortBy(_.player), none[GameOutcome])
+    } yield TestCase(
+      NonEmptyList.fromListUnsafe(marks).sortBy(_.player),
+      none[GameOutcome],
+      none[Player]
+    )
 
     forall(gen) {
-      case TestCase(marks, _) =>
+      case TestCase(marks, _, _) =>
         withGameContext(newGame) { game =>
-          marks.foldMap(game.next).extractError[InvalidMove]
+          marks.foldMap(game.next).extractErrors[InvalidMove]
         } map {
           case (_, errors) =>
             expect(
@@ -138,11 +154,12 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
     } yield TestCase(
       NonEmptyList
         .fromListUnsafe(if (allMarks.head.player.eq(Crosses)) allMarks else allMarks.tail),
-      Winner(winner).some
+      Winner(winner).some,
+      none[Player]
     )
 
     forall(gen) {
-      case TestCase(marks, expectedOutcome) =>
+      case TestCase(marks, expectedOutcome, _) =>
         withGameContext(newGame) { game =>
           marks.foldMap(game.next) *> game.solve
         } map {
@@ -152,7 +169,11 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
     }
   }
 
-  final case class TestCase(marks: NonEmptyList[Mark], expectedOutcome: Option[GameOutcome])
+  final case class TestCase(
+    marks: NonEmptyList[Mark],
+    expectedOutcome: Option[GameOutcome],
+    player: Option[Player]
+  )
 
   implicit val showTestCase: Show[TestCase] = semiauto.show
 
