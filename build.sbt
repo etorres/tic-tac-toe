@@ -11,6 +11,7 @@ version := (version in ThisBuild).value
 scalaVersion := "2.13.4"
 
 idePackagePrefix := Some("es.eriktorr")
+Global / excludeLintKeys += idePackagePrefix
 
 val catsCoreVersion = "2.2.0"
 val catsEffectsVersion = "2.2.0"
