@@ -5,7 +5,7 @@ import wartremover.Wart
 import wartremover.WartRemover.autoImport._
 
 organization := "es.eriktorr"
-name := "tick-tack-toe"
+name := "tic-tac-toe"
 version := (version in ThisBuild).value
 
 scalaVersion := "2.13.4"
