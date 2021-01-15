@@ -138,25 +138,22 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
     val gen = for {
       players <- nDistinct(2, playerGen)
       (winner, loser) = (players.head, players.last)
-      winnerPositions <- for {
-        strategy <- Gen.oneOf(diagonals, horizontalRows, verticalRows)
-        positions <- Gen.oneOf(strategy.toList)
-      } yield positions.toList
+      winnerPositions <- Gen.oneOf(
+        (diagonals combine horizontalRows combine verticalRows).map(_.toList).toList
+      )
       loserPositions <- nDistinct(
         3,
-        Gen.oneOf(allPositions.filterNot(winnerPositions.contains_(_)))
+        Gen.oneOf(allPositions.filterNot(winnerPositions.contains_))
       )
       (winnerMarks, loserMarks) = (
         asMarks(List.fill(3)(winner), winnerPositions),
         asMarks(List.fill(3)(loser), loserPositions)
       )
-      allMarks = loserMarks.intersperse(winnerMarks)
-    } yield TestCase(
-      NonEmptyList
-        .fromListUnsafe(if (allMarks.head.player.eq(Crosses)) allMarks else allMarks.tail),
-      Winner(winner).some,
-      none[Player]
-    )
+      allMarks = winner match {
+        case Crosses => winnerMarks.intersperse(loserMarks)
+        case Noughts => loserMarks.intersperse(winnerMarks)
+      }
+    } yield TestCase(NonEmptyList.fromListUnsafe(allMarks), Winner(winner).some, none[Player])
 
     forall(gen) {
       case TestCase(marks, expectedOutcome, _) =>

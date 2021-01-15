@@ -9,48 +9,48 @@ import cats.derived._
 object board {
   sealed trait Position extends Product with Serializable
 
-  case object TopLeftCorner extends Position
+  case object TopLeft extends Position
   case object TopCenter extends Position
-  case object TopRightCorner extends Position
-  case object CenterLeft extends Position
+  case object TopRight extends Position
+  case object LeftMid extends Position
   case object Center extends Position
-  case object CenterRight extends Position
-  case object BottomLeftCorner extends Position
+  case object RightMid extends Position
+  case object BottomLeft extends Position
   case object BottomCenter extends Position
-  case object BottomRightCorner extends Position
+  case object BottomRight extends Position
 
   implicit val eqPosition: Eq[Position] = semiauto.eq
 
   val allPositions: NonEmptyList[Position] = NonEmptyList.of(
-    TopLeftCorner,
+    TopLeft,
     TopCenter,
-    TopRightCorner,
-    CenterLeft,
+    TopRight,
+    LeftMid,
     Center,
-    CenterRight,
-    BottomLeftCorner,
+    RightMid,
+    BottomLeft,
     BottomCenter,
-    BottomRightCorner
+    BottomRight
   )
 
   val diagonals: NonEmptyList[Set[Position]] =
     NonEmptyList.of(
-      Set(TopLeftCorner, Center, BottomRightCorner),
-      Set(TopRightCorner, Center, BottomLeftCorner)
+      Set(TopLeft, Center, BottomRight),
+      Set(TopRight, Center, BottomLeft)
     )
 
   val horizontalRows: NonEmptyList[Set[Position]] =
     NonEmptyList.of(
-      Set(TopLeftCorner, TopCenter, TopRightCorner),
-      Set(CenterLeft, Center, CenterRight),
-      Set(BottomLeftCorner, BottomCenter, BottomRightCorner)
+      Set(TopLeft, TopCenter, TopRight),
+      Set(LeftMid, Center, RightMid),
+      Set(BottomLeft, BottomCenter, BottomRight)
     )
 
   val verticalRows: NonEmptyList[Set[Position]] =
     NonEmptyList.of(
-      Set(TopLeftCorner, CenterLeft, BottomLeftCorner),
+      Set(TopLeft, LeftMid, BottomLeft),
       Set(TopCenter, Center, BottomCenter),
-      Set(TopRightCorner, CenterRight, BottomRightCorner)
+      Set(TopRight, RightMid, BottomRight)
     )
 
   final case class Mark(player: Player, position: Position)

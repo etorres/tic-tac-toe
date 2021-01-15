@@ -75,17 +75,9 @@ trait InMemoryBoard extends Board[IO] {
         maybePlayer = positionsGroupedByPlayer
           .find {
             case (_, positions) =>
-              diagonals
+              (diagonals combine horizontalRows combine verticalRows)
                 .find(_.subsetOf(positions))
-                .orElse {
-                  horizontalRows.find(_.subsetOf(positions))
-                }
-                .orElse {
-                  verticalRows.find(_.subsetOf(positions))
-                } match {
-                case Some(_) => true
-                case None => false
-              }
+                .fold(false)(_ => true)
           }
           .map { case (player, _) => player }
       } yield maybePlayer
