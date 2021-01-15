@@ -3,7 +3,7 @@ package es.eriktorr
 import board._
 import effect._
 import error._
-import game.{Winner, Outcome => GameOutcome}
+import game.{Draw, Winner, Outcome => GameOutcome}
 import infrastructure.GameContext.GameState.newGame
 import infrastructure.GameContext.withGameContext
 import infrastructure.Generators._
@@ -141,10 +141,7 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
       winnerPositions <- Gen.oneOf(
         (diagonals combine horizontalRows combine verticalRows).map(_.toList).toList
       )
-      loserPositions <- nDistinct(
-        3,
-        Gen.oneOf(allPositions.filterNot(winnerPositions.contains_))
-      )
+      loserPositions <- nDistinct(3, Gen.oneOf(allPositions.filterNot(winnerPositions.contains_)))
       (winnerMarks, loserMarks) = (
         asMarks(List.fill(3)(winner), winnerPositions),
         asMarks(List.fill(3)(loser), loserPositions)
@@ -167,7 +164,27 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
   }
 
   simpleTest("there is a draw when players cannot make any move") {
-    failure("feature under development")
+    val gen = for {
+      players <- Gen.const(
+        List.fill(2)(Crosses) ++ List.fill(2)(Noughts) ++ List.fill(3)(Crosses) ++ List.fill(2)(
+          Noughts
+        )
+      )
+      allMarks = asMarks(players, allPositions.toList)
+      orderedMarks = allMarks
+        .filter(_.player.eq(Crosses))
+        .intersperse(allMarks.filter(_.player.eq(Noughts)))
+    } yield TestCase(NonEmptyList.fromListUnsafe(orderedMarks), Draw.some, none[Player])
+
+    forall(gen) {
+      case TestCase(marks, expectedOutcome, _) =>
+        withGameContext(newGame) { game =>
+          marks.foldMap(game.next) *> game.solve
+        } map {
+          case (finalState, outcome) =>
+            expect.all(finalState.marks == marks.toList.reverse, outcome == expectedOutcome)
+        }
+    }
   }
 
   final case class TestCase(

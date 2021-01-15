@@ -3,6 +3,7 @@ package es.eriktorr
 import board._
 import player._
 
+import cats._
 import cats.effect._
 import cats.implicits._
 
@@ -21,12 +22,17 @@ object game {
     def start[F[_]: Sync](board: Board[F]): Game[F] = new Game[F] {
       override def next(mark: Mark): F[Unit] = board.add(mark)
 
-      override def solve: F[Option[Outcome]] =
-        board.playerWithThreeMarksInARow
-          .map {
-            case Some(player) => Winner(player).some
-            case None => none[Outcome]
-          }
+      override def solve: F[Option[Outcome]] = {
+        val F = Monad[F]
+        F.ifM(board.marksLeft.map(_ == 0))(
+          ifTrue = F.pure(Draw.some),
+          ifFalse = board.playerWithThreeMarksInARow
+            .map {
+              case Some(player) => Winner(player).some
+              case None => none[Outcome]
+            }
+        )
+      }
     }
   }
 }
