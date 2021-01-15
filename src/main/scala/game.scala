@@ -22,7 +22,7 @@ object game {
       override def next(mark: Mark): F[Unit] = board.add(mark)
 
       override def solve: F[Option[Outcome]] =
-        board.threeInARow
+        board.playerWithThreeMarksInARow
           .map {
             case Some(player) => Winner(player).some
             case None => none[Outcome]

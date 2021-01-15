@@ -169,6 +169,10 @@ object PlayGameSuite extends SimpleIOSuite with IOCheckers {
     }
   }
 
+  simpleTest("there is a draw when players cannot make any move") {
+    failure("feature under development")
+  }
+
   final case class TestCase(
     marks: NonEmptyList[Mark],
     expectedOutcome: Option[GameOutcome],

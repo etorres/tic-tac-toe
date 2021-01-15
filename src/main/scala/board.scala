@@ -60,6 +60,8 @@ object board {
   trait Board[F[_]] {
     def add(mark: Mark): F[Unit]
 
-    def threeInARow: F[Option[Player]]
+    def playerWithThreeMarksInARow: F[Option[Player]]
+
+    def marksLeft: F[Int]
   }
 }
